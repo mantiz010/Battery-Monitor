@@ -41,7 +41,7 @@ The integration also includes a dashboard that provides a visual overview of all
 ## Installation
 
 1. **Copy Files:**  
-   Create a folder in your Home Assistant configuration directory called `custom_components/battery_icons/` and copy the following files into it:
+   Create a folder in your Home Assistant configuration directory called `custom_components/battery_monitor/` and copy the following files into it:
    - `manifest.json`
    - `__init__.py`
    - `sensor.py`
