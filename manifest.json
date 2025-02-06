@@ -1,0 +1,9 @@
+{
+  "domain": "battery_icons",
+  "name": "Battery Icons & Notifications",
+  "version": "1.0.0",
+  "documentation": "https://github.com/mantiz010/Battery-Monitor",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [@mantiz010]
+}
