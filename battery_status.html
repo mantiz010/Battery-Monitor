@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +11,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9f9f9;
+      background: #f4f4f4;
       color: #333;
     }
 
@@ -23,7 +24,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
     header h1 {
-      font-size: 2em; 
+      font-size: 2em;
       margin: 0;
     }
     header p {
@@ -31,59 +32,55 @@
       margin: 10px 0 0;
     }
 
-    /* Full-width container, but centered content with max-width */
+    /* Full-width container */
     .container {
       width: 100%;
       padding: 20px;
       box-sizing: border-box;
     }
 
-    /* Main list of battery cards */
+    /* Battery Card List */
     #battery-cards {
       list-style: none;
-      margin: 0 auto;         /* center the list itself */
+      margin: 0 auto;
       padding: 0;
-      max-width: 840px;       /* adjust as needed */
+      max-width: 1080px;
       width: 100%;
     }
 
-    /* Individual Battery Card */
+    /* Battery Card */
     .battery-card {
       background: #fff;
       border-radius: 6px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      padding: 15px;
+      padding: 20px;
       margin-bottom: 15px;
-      
-      /* Use a full bounding border so the card is clearly defined */
-      border: 5px solid #3498db;
-
-      /* Layout for text & battery icon (desktop/tablet) */
+      border: 4px solid #3498db;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    /* Battery Info Text */
+    /* Battery Info */
     .battery-info {
       flex: 1;
       margin-right: 10px;
     }
     .battery-info h2 {
       margin: 0;
-      font-size: 1.2em;
+      font-size: 1.4em;
     }
     .battery-info p {
       margin: 4px 0;
-      font-size: 0.9em;
+      font-size: 1em;
     }
 
-    /* More realistic battery icon */
+    /* Battery Icon */
     .battery-icon {
       position: relative;
-      width: 100px;
-      height: 40px;
-      background: linear-gradient(to bottom, #777, #999); /* metallic look */
+      width: 120px;
+      height: 50px;
+      background: #777;
       border: 2px solid #333;
       border-radius: 6px;
       box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
@@ -92,60 +89,31 @@
     .battery-icon::after {
       content: "";
       position: absolute;
-      right: -10px;
+      right: -12px;
       top: 30%;
-      width: 10px;
+      width: 12px;
       height: 40%;
       background: #333;
-      border-top-right-radius: 3px;
-      border-bottom-right-radius: 3px;
-      box-shadow: inset 0 0 2px rgba(0,0,0,0.5);
-    }
-    .battery-icon::before {
-      content: none; /* remove stripes */
+      border-radius: 3px;
     }
     .battery-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(to right, #a2f4a2, #4caf50); /* green by default */
+      background: #4caf50;
       border-radius: 4px 0 0 4px;
       transition: width 0.4s, background-color 0.4s;
     }
 
-    /*
-      =================================================
-      SMALL SCREEN (MOBILE) - Stack content vertically
-      =================================================
-    */
+    /* Responsive Styles */
     @media (max-width: 600px) {
-      header h1 {
-        font-size: 1.5em;
-      }
-      header p {
-        font-size: 0.9em;
-      }
-      #battery-cards {
-        max-width: 95%; /* use most of the width on small screens */
-      }
-
-      /* Stack each card vertically */
       .battery-card {
         flex-direction: column;
-        align-items: center;   /* center content horizontally */
         text-align: center;
       }
       .battery-info {
         margin-right: 0;
-        margin-bottom: 10px;   /* spacing between text and battery icon */
+        margin-bottom: 10px;
       }
-      .battery-info h2 {
-        font-size: 1em;
-      }
-      .battery-info p {
-        font-size: 0.85em;
-      }
-
-      /* Slightly smaller battery icon on mobile */
       .battery-icon {
         width: 80px;
         height: 30px;
@@ -153,35 +121,6 @@
       .battery-icon::after {
         right: -8px;
         width: 8px;
-      }
-    }
-
-    /*
-      ========================================
-      LARGE SCREEN (DESKTOP) - Optional Upscale
-      ========================================
-    */
-    @media (min-width: 1024px) {
-      #battery-cards {
-        max-width: 1080px; /* bigger container on large screens */
-      }
-
-      .battery-card {
-        padding: 20px;
-      }
-      .battery-info h2 {
-        font-size: 1.4em;
-      }
-      .battery-info p {
-        font-size: 1em;
-      }
-      .battery-icon {
-        width: 120px;
-        height: 50px;
-      }
-      .battery-icon::after {
-        right: -12px;
-        width: 12px;
       }
     }
   </style>
@@ -199,7 +138,7 @@
   <script>
     async function fetchBatteryData() {
       try {
-        const response = await fetch(window.location.origin + '/battery_icons/data');
+        const response = await fetch(window.location.origin + '/battery_monitor/data');
         const data = await response.json();
         updateBatteryCards(data);
       } catch (error) {
@@ -219,35 +158,27 @@
       data.forEach(sensor => {
         const percentage = sensor.percentage || 0;
         const voltage = sensor.voltage || 'N/A';
-        let fillColor = `linear-gradient(to right, #a2f4a2, #4caf50)`;
+
+        let fillColor = '#4caf50';  // Green by default
         if (percentage <= 50 && percentage > 30) {
-          fillColor = `linear-gradient(to right, #fffab2, #ffeb3b)`;
+          fillColor = '#ffeb3b';  // Yellow
         } else if (percentage <= 30) {
-          fillColor = `linear-gradient(to right, #ffb4b4, #f44336)`;
+          fillColor = '#f44336';  // Red
         }
 
-        // Build the battery info.
+        // Build the battery info
         let infoHtml = `<h2>${sensor.name}</h2>`;
-        // For voltage-based sensors (voltage is not "N/A"), show Voltage and Battery percentage.
-        if (voltage !== "N/A") {
+        if (voltage !== 'N/A') {
           infoHtml += `<p>Voltage: ${voltage} V</p>`;
-          infoHtml += `<p>Battery: ${percentage.toFixed(1)}%</p>`;
-        } else {
-          // For percentage-based sensors, show only Battery percentage with "%" unit.
-          infoHtml += `<p>Battery: ${percentage.toFixed(1)}%</p>`;
         }
+        infoHtml += `<p>Battery: ${percentage.toFixed(1)}%</p>`;
 
         const li = document.createElement('li');
         li.className = 'battery-card';
         li.innerHTML = `
-          <div class="battery-info">
-            ${infoHtml}
-          </div>
+          <div class="battery-info">${infoHtml}</div>
           <div class="battery-icon">
-            <div 
-              class="battery-fill"
-              style="width: ${percentage}%; background: ${fillColor};">
-            </div>
+            <div class="battery-fill" style="width: ${percentage}%; background: ${fillColor};"></div>
           </div>
         `;
 
@@ -255,7 +186,6 @@
       });
     }
 
-    // Initial call and auto-refresh every 60 seconds
     fetchBatteryData();
     setInterval(fetchBatteryData, 60000);
   </script>
