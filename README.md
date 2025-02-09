@@ -34,7 +34,7 @@ The integration also includes a dashboard that provides a visual overview of all
   Accessible at `http://<home_assistant_url>:8123/local/battery_status.html`. Displays real-time battery levels and voltages for all configured sensors.
 
 - **HTTP Endpoint:**  
-  Provides a JSON API at `/battery_icons/data` that returns battery data from all sensors.
+  Provides a JSON API at `/battery_monitor/data` that returns battery data from all sensors.
 
 ---
 
@@ -65,8 +65,8 @@ Add the following configuration to your `configuration.yaml` file under the `sen
 
 ```yaml
 sensor:
-  - platform: battery_icons
-    name: "Battery Icons"
+  - platform: battery_monitor
+    name: "Battery monitor"
     low_threshold: 25
     sensors:
       # Voltage-based sensor
@@ -102,7 +102,7 @@ http://<home_assistant_url>:8123/local/battery_status.html
 
 ### Dashboard Features
 - Displays each battery sensor's name, voltage, and percentage.
-- Dynamically updates with real-time data from the `/battery_icons/data` endpoint.
+- Dynamically updates with real-time data from the `/battery_monitor/data` endpoint.
 
 ---
 
