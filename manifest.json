@@ -1,7 +1,7 @@
 {
     "domain": "battery_monitor",
     "name": "Battery Monitor Integration",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "documentation": "https://github.com/mantiz010/battery-monitor",
     "dependencies": [],
     "codeowners": ["@mantiz010"],
