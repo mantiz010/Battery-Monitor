@@ -1,6 +1,6 @@
 # Battery Monitor Custom Integration
 
-The **Battery Icons** integration creates battery sensor entities in Home Assistant that display battery percentages. It supports two modes:
+The **Battery Monitor** integration creates battery sensor entities in Home Assistant that display battery percentages. It supports two modes:
 
 - **Voltage-Based Mode:**  
   Computes the battery percentage from a voltage reading using configured minimum and maximum voltage values.
