@@ -1,9 +1,10 @@
 {
-  "domain": "battery_icons",
-  "name": "Battery Icons & Notifications",
-  "version": "1.0.0",
-  "documentation": "https://github.com/mantiz010/Battery-Monitor",
-  "requirements": [],
-  "dependencies": [],
-  "codeowners": [@mantiz010]
+    "domain": "battery_monitor",
+    "name": "Battery Monitor Integration",
+    "version": "1.0.0",
+    "documentation": "https://github.com/mantiz010/battery-monitor",
+    "dependencies": [],
+    "codeowners": ["@mantiz010"],
+    "requirements": [],
+    "iot_class": "local_polling"
 }
