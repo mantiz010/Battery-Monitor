@@ -1,1 +1,1 @@
-"""Initialize the Battery Icons integration."""
+"""Initialize the Battery Monitor integration."""
