@@ -12,7 +12,8 @@ _All sensors created by this integration display the unit of measurement as "%" 
 
 Additionally, the integration sends a persistent notification when:
 - A sensor's battery level falls below the configured low threshold.
-- A battery stays at `0%` for more than a configurable period, prompting a **battery replacement reminder**.
+
+It also records a `last_replaced` timestamp when a battery level increases by the configured battery-increase threshold. The previous level and replacement timestamp are restored after Home Assistant restarts.
 
 The integration also includes a dashboard that provides a visual overview of all configured battery sensors.
 
@@ -28,7 +29,9 @@ The integration also includes a dashboard that provides a visual overview of all
 
 - **Persistent Notifications:**  
   - **Low Battery Notification:** When a sensor’s battery level is below the configured threshold.
-  - **Battery Replacement Reminder:** When a battery remains at `0%` for a prolonged period (default is 7 days).
+
+- **Battery Replacement Tracking:**
+  Updates the sensor's `last_replaced` attribute when its battery percentage increases by at least the configured threshold.
 
 - **Dashboard with Battery Overview:**  
   Accessible at `http://<home_assistant_url>:8123/local/battery_status.html`. Displays real-time battery levels and voltages for all configured sensors.
@@ -68,6 +71,7 @@ sensor:
   - platform: battery_monitor
     name: "Battery monitor"
     low_threshold: 25
+    battery_increase_threshold: 25
     sensors:
       # Voltage-based sensor
       - entity_id: sensor.hydro_battery_voltage
@@ -84,6 +88,7 @@ sensor:
 
 - **name**: The name prefix for all created battery sensors.
 - **low_threshold**: The battery percentage threshold for sending a low battery notification.
+- **battery_increase_threshold**: The minimum percentage-point increase that marks a battery as replaced and updates the `last_replaced` attribute. Defaults to `25` and accepts values from `0` to `100`.
 - **sensors**: Define each battery sensor to be monitored.
   - **entity_id**: The entity ID of the existing sensor in Home Assistant.
   - **sensor_type**: The type of sensor (`voltage` or `percentage`).
