@@ -1,10 +1,13 @@
 
 import logging
+from datetime import datetime, timezone
+
 import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.persistent_notification import async_create as persist_notify
 from homeassistant.const import STATE_UNKNOWN, STATE_UNAVAILABLE
@@ -17,10 +20,13 @@ DOMAIN = "battery_monitor"
 # Configuration Keys
 CONF_SENSORS = "sensors"
 CONF_LOW_THRESHOLD = "low_threshold"
+CONF_BATTERY_INCREASE_THRESHOLD = "battery_increase_threshold"
 CONF_MAX_VOLTAGE = "max_voltage"
 CONF_MIN_VOLTAGE = "min_voltage"
 CONF_NAME = "name"
 CONF_SENSOR_TYPE = "sensor_type"  # "voltage" (default) or "percentage"
+
+ATTR_LAST_REPLACED = "last_replaced"
 
 # Schema for each sensor configuration.
 SENSOR_SCHEMA = vol.Schema({
@@ -35,6 +41,9 @@ PLATFORM_SCHEMA = vol.Schema({
     vol.Required(CONF_SENSORS): vol.All(cv.ensure_list, [SENSOR_SCHEMA]),
     vol.Optional(CONF_NAME, default="Battery Monitor"): cv.string,
     vol.Optional(CONF_LOW_THRESHOLD, default=25.0): vol.Coerce(float),
+    vol.Optional(CONF_BATTERY_INCREASE_THRESHOLD, default=25.0): vol.All(
+        vol.Coerce(float), vol.Range(min=0, max=100)
+    ),
 }, extra=vol.ALLOW_EXTRA)
 
 
@@ -43,8 +52,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     sensors_config = config[CONF_SENSORS]
     name_prefix = config.get(CONF_NAME)
     low_threshold = config.get(CONF_LOW_THRESHOLD)
+    battery_increase_threshold = config.get(CONF_BATTERY_INCREASE_THRESHOLD)
 
-    _LOGGER.info("Setting up Battery Monitor for sensors with low_threshold=%.1f", low_threshold)
+    _LOGGER.info(
+        "Setting up Battery Monitor with low_threshold=%.1f and battery_increase_threshold=%.1f",
+        low_threshold,
+        battery_increase_threshold,
+    )
 
     sensors = []
     for sensor_conf in sensors_config:
@@ -60,7 +74,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             sensor_type,
             max_voltage,
             min_voltage,
-            low_threshold
+            low_threshold,
+            battery_increase_threshold,
         )
         sensors.append(sensor)
 
@@ -70,14 +85,24 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     register_http_routes(hass, sensors)
 
 
-class BatteryMonitorSensor(SensorEntity):
+class BatteryMonitorSensor(SensorEntity, RestoreEntity):
     """A sensor that computes battery percentage from a voltage sensor or uses the state directly for percentage sensors.
     
     The entity always returns a numeric value (and its string representation) so that template filters work without error.
     It defines a unique_id to avoid duplicates and sends a persistent notification when battery is low.
     """
 
-    def __init__(self, hass, target_entity_id, name, sensor_type, max_voltage, min_voltage, low_threshold):
+    def __init__(
+        self,
+        hass,
+        target_entity_id,
+        name,
+        sensor_type,
+        max_voltage,
+        min_voltage,
+        low_threshold,
+        battery_increase_threshold=25.0,
+    ):
         self._hass = hass
         self._target_entity_id = target_entity_id
         self._name = name
@@ -85,18 +110,36 @@ class BatteryMonitorSensor(SensorEntity):
         self._max_voltage = max_voltage
         self._min_voltage = min_voltage
         self._low_threshold = low_threshold
+        self._battery_increase_threshold = battery_increase_threshold
         self._state = 0.0  # Always numeric.
+        self._last_battery_level = None
+        self._last_replaced = None
         self._icon = "mdi:battery"
         self._notified = False  # To prevent repeated notifications.
         self._unique_id = f"{DOMAIN}_{target_entity_id.replace('.', '_')}"
 
     async def async_added_to_hass(self):
-        """Register state change listener using async_track_state_change_event."""
+        """Restore replacement data and register the state change listener."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            try:
+                self._state = float(last_state.state)
+                self._last_battery_level = self._state
+            except (TypeError, ValueError):
+                pass
+            self._last_replaced = last_state.attributes.get(ATTR_LAST_REPLACED)
+
         @callback
         def _state_listener(event):
             new_state = event.data.get("new_state")
             self._update_state(new_state)
-        async_track_state_change_event(self._hass, [self._target_entity_id], _state_listener)
+
+        self.async_on_remove(
+            async_track_state_change_event(
+                self._hass, [self._target_entity_id], _state_listener
+            )
+        )
         init_state = self._hass.states.get(self._target_entity_id)
         self._update_state(init_state)
 
@@ -119,6 +162,13 @@ class BatteryMonitorSensor(SensorEntity):
                         percentage = ((voltage - self._min_voltage) / (self._max_voltage - self._min_voltage)) * 100
                         percentage = max(0, min(100, percentage))
                         self._state = round(percentage, 1)
+                if (
+                    self._last_battery_level is not None
+                    and self._state - self._last_battery_level
+                    >= self._battery_increase_threshold
+                ):
+                    self._last_replaced = datetime.now(timezone.utc).isoformat()
+                self._last_battery_level = self._state
                 self._icon = self._get_icon(self._state)
                 if self._state < self._low_threshold and not self._notified:
                     self._notify_low_battery(self._state)
@@ -177,6 +227,10 @@ class BatteryMonitorSensor(SensorEntity):
     def unit_of_measurement(self):
         return "%"
 
+    @property
+    def extra_state_attributes(self):
+        return {ATTR_LAST_REPLACED: self._last_replaced}
+
 
 class BatteryMonitorDataView(HomeAssistantView):
     """HTTP view to return battery data as JSON."""
@@ -197,6 +251,7 @@ class BatteryMonitorDataView(HomeAssistantView):
                 "name": sensor.name,
                 "voltage": voltage_display,
                 "percentage": sensor.native_value,
+                ATTR_LAST_REPLACED: sensor._last_replaced,
             })
         _LOGGER.debug("Battery data returned: %s", battery_data)
         return aiohttp.web.json_response(battery_data)
